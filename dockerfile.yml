@@ -1,0 +1,87 @@
+version: '3'
+
+networks:
+  app-network:
+    driver: bridge
+
+services:
+
+  apache:
+    image: httpd:2.4
+    ports:
+      - "80:80"
+    volumes:
+      - ./www:/usr/local/apache2/htdocs/
+    networks:
+      - app-network
+
+  php74:
+    image: php:7.4-apache
+    volumes:
+      - ./www:/var/www/html
+    working_dir: /var/www/html
+    command: php -S 0.0.0.0:8074 -t /var/www/html
+    networks:
+      - app-network
+
+  php81:
+    image: php:8.1-apache
+    volumes:
+      - ./www:/var/www/html
+    working_dir: /var/www/html
+    command: php -S 0.0.0.0:8081 -t /var/www/html
+    networks:
+      - app-network
+
+  nodejs:
+    image: node:8
+    working_dir: /app
+    volumes:
+      - ./app:/app
+    command: bash -c "npm install && npm start"
+    networks:
+      - app-network
+
+  mariadb:
+    image: mariadb:10.1
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:9.6
+    environment:
+      POSTGRES_PASSWORD: root
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  adminer:
+    image: adminer:4.3
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mariadb
+    depends_on:
+      - mariadb
+    networks:
+      - app-network
+
+volumes:
+  mariadb_data:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
